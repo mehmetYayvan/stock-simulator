@@ -7,6 +7,7 @@ A Python CLI tool that simulates historical stock investments. Ever wondered "Wh
 - Fetch historical stock prices from Yahoo Finance
 - Simulate investments with custom amounts and dates
 - Portfolio mode - track multiple stocks at once
+- Best investment finder - rank stocks by performance
 - Calculate returns, profit/loss, and annualized performance
 - Support for custom sell dates or current price comparison
 
@@ -78,6 +79,30 @@ Total Return: +$2,673.07 (+133.7%)
 Annualized: +31.6%
 ```
 
+### Best Investment Finder
+
+```bash
+# Find the best performing stocks since 2020
+stock-sim best AAPL TSLA MSFT GOOGL NVDA META AMZN --date 2020-01-01 --top 5
+```
+
+Output:
+```
+BEST INVESTMENTS
+Period: 2020-01-01 to 2026-02-04
+Investment: $1,000 each
+==================================================
+Rank  Ticker         Return    Final Value
+--------------------------------------------------
+1     NVDA     +    2874.4%  $      29,744
+2     TSLA     +    1353.2%  $      14,532
+3     GOOGL    +     399.9%  $       4,999
+4     AAPL     +     288.9%  $       3,889
+5     META     +     229.8%  $       3,298
+==================================================
+Best: NVDA (NVIDIA Corporation)
+```
+
 ### Check Current Price
 
 ```bash
@@ -116,10 +141,10 @@ Any stock available on Yahoo Finance, including:
 ## Future Enhancements
 
 - [x] Portfolio mode (multiple stocks)
+- [x] "Best investment" finder for a time period
 - [ ] Visualization with charts
 - [ ] Compare against S&P 500 benchmark
 - [ ] Dollar-cost averaging simulation
-- [ ] "Best investment" finder for a time period
 - [ ] Export to CSV/PDF
 
 ## License
