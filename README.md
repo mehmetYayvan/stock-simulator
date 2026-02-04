@@ -8,6 +8,7 @@ A Python CLI tool that simulates historical stock investments. Ever wondered "Wh
 - Simulate investments with custom amounts and dates
 - Portfolio mode - track multiple stocks at once
 - Best investment finder - rank stocks by performance
+- Compare scenarios - what if I did A vs B?
 - Calculate returns, profit/loss, and annualized performance
 - Support for custom sell dates or current price comparison
 
@@ -103,6 +104,28 @@ Rank  Ticker         Return    Final Value
 Best: NVDA (NVIDIA Corporation)
 ```
 
+### Compare Scenarios
+
+```bash
+# Compare two different investment strategies
+stock-sim compare "AAPL:1000,TSLA:500" "MSFT:800,GOOGL:700" --date 2020-01-01
+```
+
+Output:
+```
+SCENARIO COMPARISON
+Period: 2020-01-01 to 2026-02-04
+=======================================================
+Scenario 1: AAPL:$1,000 + TSLA:$500
+  $1,500 -> $11,150 (+643.4%)
+
+Scenario 2: MSFT:$800 + GOOGL:$700
+  $1,500 -> $5,729 (+281.9%)
+
+=======================================================
+Winner: Scenario 1 (+361.4% better)
+```
+
 ### Check Current Price
 
 ```bash
@@ -142,6 +165,7 @@ Any stock available on Yahoo Finance, including:
 
 - [x] Portfolio mode (multiple stocks)
 - [x] "Best investment" finder for a time period
+- [x] Compare investment scenarios
 - [ ] Visualization with charts
 - [ ] Compare against S&P 500 benchmark
 - [ ] Dollar-cost averaging simulation
