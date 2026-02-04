@@ -5,7 +5,10 @@ from datetime import datetime
 import click
 
 from .fetcher import get_stock_price, get_current_price, StockDataError
-from .simulator import simulate_investment, simulate_portfolio, rank_investments, RankingResult
+from .simulator import (
+    simulate_investment, simulate_portfolio, rank_investments,
+    RankingResult, ScenarioResult, ComparisonResult
+)
 
 
 @click.group()
@@ -271,6 +274,114 @@ def best(tickers: tuple, date: str, sell_date: str, amount: float, top: int):
         amount=amount,
     )
     click.echo("\n" + str(ranking_result))
+
+
+@cli.command()
+@click.argument('scenarios', nargs=-1, required=True)
+@click.option('--date', '-d', required=True, help='Buy date (YYYY-MM-DD)')
+@click.option('--sell-date', '-s', default=None, help='Sell date (YYYY-MM-DD). Defaults to today.')
+def compare(scenarios: tuple, date: str, sell_date: str):
+    """
+    Compare different investment scenarios.
+
+    SCENARIOS format: "TICKER:AMOUNT,TICKER:AMOUNT" (quoted, comma-separated)
+
+    Example: stock-sim compare "AAPL:1000,TSLA:500" "MSFT:800,GOOGL:700" --date 2020-01-01
+    """
+    if len(scenarios) < 2:
+        click.echo("Error: Need at least 2 scenarios to compare.", err=True)
+        sys.exit(1)
+
+    # Parse buy date
+    try:
+        buy_date = datetime.strptime(date, '%Y-%m-%d')
+    except ValueError:
+        click.echo(f"Error: Invalid date format '{date}'. Use YYYY-MM-DD.", err=True)
+        sys.exit(1)
+
+    if buy_date > datetime.now():
+        click.echo("Error: Buy date cannot be in the future.", err=True)
+        sys.exit(1)
+
+    # Parse sell date
+    if sell_date:
+        try:
+            sell_dt = datetime.strptime(sell_date, '%Y-%m-%d')
+        except ValueError:
+            click.echo(f"Error: Invalid sell date format '{sell_date}'. Use YYYY-MM-DD.", err=True)
+            sys.exit(1)
+        if sell_dt < buy_date:
+            click.echo("Error: Sell date cannot be before buy date.", err=True)
+            sys.exit(1)
+    else:
+        sell_dt = datetime.now()
+
+    click.echo(f"Comparing {len(scenarios)} scenarios...")
+
+    scenario_results = []
+    for i, scenario_str in enumerate(scenarios, 1):
+        # Parse holdings from "AAPL:1000,TSLA:500" format
+        holdings_strs = scenario_str.split(',')
+        holdings = []
+
+        for h in holdings_strs:
+            h = h.strip()
+            if ':' not in h:
+                click.echo(f"Error: Invalid format '{h}' in scenario {i}. Use TICKER:AMOUNT.", err=True)
+                sys.exit(1)
+            parts = h.split(':')
+            if len(parts) != 2:
+                click.echo(f"Error: Invalid format '{h}' in scenario {i}. Use TICKER:AMOUNT.", err=True)
+                sys.exit(1)
+            ticker = parts[0].upper()
+            try:
+                amount = float(parts[1])
+            except ValueError:
+                click.echo(f"Error: Invalid amount in '{h}'.", err=True)
+                sys.exit(1)
+            if amount <= 0:
+                click.echo(f"Error: Amount must be positive in '{h}'.", err=True)
+                sys.exit(1)
+
+            try:
+                buy_price, company_name = get_stock_price(ticker, buy_date)
+                if sell_date:
+                    sell_price, _ = get_stock_price(ticker, sell_dt)
+                else:
+                    sell_price = get_current_price(ticker)
+
+                result = simulate_investment(
+                    ticker=ticker,
+                    company_name=company_name,
+                    buy_date=buy_date,
+                    buy_price=buy_price,
+                    sell_date=sell_dt,
+                    sell_price=sell_price,
+                    investment_amount=amount,
+                )
+                holdings.append(result)
+            except StockDataError as e:
+                click.echo(f"Error fetching {ticker}: {e}", err=True)
+                sys.exit(1)
+
+        total_invested = sum(h.investment_amount for h in holdings)
+        total_value = sum(h.final_value for h in holdings)
+        percent_return = ((total_value - total_invested) / total_invested) * 100 if total_invested > 0 else 0
+
+        scenario_results.append(ScenarioResult(
+            name=f"Scenario {i}",
+            holdings=holdings,
+            total_invested=total_invested,
+            total_value=total_value,
+            percent_return=percent_return,
+        ))
+
+    comparison = ComparisonResult(
+        scenarios=scenario_results,
+        buy_date=buy_date,
+        sell_date=sell_dt,
+    )
+    click.echo("\n" + str(comparison))
 
 
 if __name__ == '__main__':

@@ -206,3 +206,51 @@ class RankingResult:
 def rank_investments(results: list[InvestmentResult]) -> list[InvestmentResult]:
     """Sort investments by percent return, highest first."""
     return sorted(results, key=lambda r: r.percent_return, reverse=True)
+
+
+@dataclass
+class ScenarioResult:
+    """Result of a single scenario."""
+    name: str
+    holdings: list[InvestmentResult] = field(default_factory=list)
+    total_invested: float = 0.0
+    total_value: float = 0.0
+    percent_return: float = 0.0
+
+
+@dataclass
+class ComparisonResult:
+    """Comparison of multiple investment scenarios."""
+    scenarios: list[ScenarioResult] = field(default_factory=list)
+    buy_date: datetime = None
+    sell_date: datetime = None
+
+    def __str__(self) -> str:
+        lines = [
+            "SCENARIO COMPARISON",
+            f"Period: {self.buy_date.strftime('%Y-%m-%d')} to {self.sell_date.strftime('%Y-%m-%d')}",
+            "=" * 55,
+        ]
+
+        for s in self.scenarios:
+            holdings_str = " + ".join(f"{h.ticker}:${h.investment_amount:,.0f}" for h in s.holdings)
+            sign = "+" if s.percent_return >= 0 else ""
+            lines.append(f"{s.name}: {holdings_str}")
+            lines.append(f"  ${s.total_invested:,.0f} -> ${s.total_value:,.0f} ({sign}{s.percent_return:.1f}%)")
+            lines.append("")
+
+        lines.append("=" * 55)
+
+        if len(self.scenarios) >= 2:
+            sorted_scenarios = sorted(self.scenarios, key=lambda x: x.percent_return, reverse=True)
+            winner = sorted_scenarios[0]
+            runner_up = sorted_scenarios[1]
+            diff = winner.percent_return - runner_up.percent_return
+            lines.append(f"Winner: {winner.name} (+{diff:.1f}% better)")
+
+        return "\n".join(lines)
+
+
+def compare_scenarios(scenarios: list[ScenarioResult]) -> list[ScenarioResult]:
+    """Sort scenarios by percent return, highest first."""
+    return sorted(scenarios, key=lambda s: s.percent_return, reverse=True)
