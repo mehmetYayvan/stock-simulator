@@ -6,6 +6,7 @@ A Python CLI tool that simulates historical stock investments. Ever wondered "Wh
 
 - Fetch historical stock prices from Yahoo Finance
 - Simulate investments with custom amounts and dates
+- Portfolio mode - track multiple stocks at once
 - Calculate returns, profit/loss, and annualized performance
 - Support for custom sell dates or current price comparison
 
@@ -55,6 +56,28 @@ Annualized: +25.8%
 stock-sim simulate TSLA --date 2019-06-01 --amount 5000 --sell-date 2021-01-01
 ```
 
+### Portfolio Mode
+
+```bash
+# Simulate a portfolio with multiple stocks
+stock-sim portfolio AAPL:1000 TSLA:500 MSFT:500 --date 2023-01-01
+```
+
+Output:
+```
+PORTFOLIO SUMMARY
+=============================================
+AAPL: $1,000 -> $2,148 (+114.8%)
+TSLA: $500 -> $1,636 (+227.2%)
+MSFT: $500 -> $889 (+77.8%)
+=============================================
+Period: 2023-01-01 to 2026-02-04
+Total Invested: $2,000.00
+Final Value: $4,673.07
+Total Return: +$2,673.07 (+133.7%)
+Annualized: +31.6%
+```
+
 ### Check Current Price
 
 ```bash
@@ -92,7 +115,7 @@ Any stock available on Yahoo Finance, including:
 
 ## Future Enhancements
 
-- [ ] Portfolio mode (multiple stocks)
+- [x] Portfolio mode (multiple stocks)
 - [ ] Visualization with charts
 - [ ] Compare against S&P 500 benchmark
 - [ ] Dollar-cost averaging simulation

@@ -1,6 +1,6 @@
 """Investment simulation calculations."""
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Optional
 
@@ -100,6 +100,74 @@ def simulate_investment(
         shares=shares,
         final_value=final_value,
         profit=profit,
+        percent_return=percent_return,
+        annualized_return=annualized_return,
+    )
+
+
+@dataclass
+class PortfolioResult:
+    """Results of a portfolio simulation."""
+    holdings: list[InvestmentResult] = field(default_factory=list)
+    buy_date: datetime = None
+    sell_date: datetime = None
+    total_invested: float = 0.0
+    total_value: float = 0.0
+    total_profit: float = 0.0
+    percent_return: float = 0.0
+    annualized_return: Optional[float] = None
+
+    def __str__(self) -> str:
+        lines = ["PORTFOLIO SUMMARY", "=" * 45]
+
+        for h in self.holdings:
+            sign = "+" if h.profit >= 0 else ""
+            lines.append(f"{h.ticker}: ${h.investment_amount:,.0f} -> ${h.final_value:,.0f} ({sign}{h.percent_return:.1f}%)")
+
+        lines.append("=" * 45)
+        lines.append(f"Period: {self.buy_date.strftime('%Y-%m-%d')} to {self.sell_date.strftime('%Y-%m-%d')}")
+        lines.append(f"Total Invested: ${self.total_invested:,.2f}")
+        lines.append(f"Final Value: ${self.total_value:,.2f}")
+
+        sign = "+" if self.total_profit >= 0 else ""
+        lines.append(f"Total Return: {sign}${self.total_profit:,.2f} ({sign}{self.percent_return:.1f}%)")
+
+        if self.annualized_return is not None:
+            sign = "+" if self.annualized_return >= 0 else ""
+            lines.append(f"Annualized: {sign}{self.annualized_return:.1f}%")
+
+        return "\n".join(lines)
+
+
+def simulate_portfolio(
+    holdings: list[InvestmentResult],
+    buy_date: datetime,
+    sell_date: datetime,
+) -> PortfolioResult:
+    """Calculate portfolio totals from individual holdings."""
+    total_invested = sum(h.investment_amount for h in holdings)
+    total_value = sum(h.final_value for h in holdings)
+    total_profit = total_value - total_invested
+    percent_return = (total_profit / total_invested) * 100 if total_invested > 0 else 0
+
+    days_held = (sell_date - buy_date).days
+    if days_held > 0:
+        years_held = days_held / 365.25
+        if years_held >= 0.01:
+            total_return = total_value / total_invested
+            annualized_return = (pow(total_return, 1 / years_held) - 1) * 100
+        else:
+            annualized_return = None
+    else:
+        annualized_return = None
+
+    return PortfolioResult(
+        holdings=holdings,
+        buy_date=buy_date,
+        sell_date=sell_date,
+        total_invested=total_invested,
+        total_value=total_value,
+        total_profit=total_profit,
         percent_return=percent_return,
         annualized_return=annualized_return,
     )

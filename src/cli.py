@@ -5,7 +5,7 @@ from datetime import datetime
 import click
 
 from .fetcher import get_stock_price, get_current_price, StockDataError
-from .simulator import simulate_investment
+from .simulator import simulate_investment, simulate_portfolio
 
 
 @click.group()
@@ -106,6 +106,92 @@ def price(ticker: str):
     except StockDataError as e:
         click.echo(f"Error: {e}", err=True)
         sys.exit(1)
+
+
+@cli.command()
+@click.argument('holdings', nargs=-1, required=True)
+@click.option('--date', '-d', required=True, help='Buy date (YYYY-MM-DD)')
+@click.option('--sell-date', '-s', default=None, help='Sell date (YYYY-MM-DD). Defaults to today.')
+def portfolio(holdings: tuple, date: str, sell_date: str):
+    """
+    Simulate a portfolio of stocks.
+
+    HOLDINGS format: TICKER:AMOUNT (e.g., AAPL:1000 TSLA:500 MSFT:500)
+
+    Example: stock-sim portfolio AAPL:1000 TSLA:500 --date 2020-01-01
+    """
+    # Parse buy date
+    try:
+        buy_date = datetime.strptime(date, '%Y-%m-%d')
+    except ValueError:
+        click.echo(f"Error: Invalid date format '{date}'. Use YYYY-MM-DD.", err=True)
+        sys.exit(1)
+
+    if buy_date > datetime.now():
+        click.echo("Error: Buy date cannot be in the future.", err=True)
+        sys.exit(1)
+
+    # Parse sell date
+    if sell_date:
+        try:
+            sell_dt = datetime.strptime(sell_date, '%Y-%m-%d')
+        except ValueError:
+            click.echo(f"Error: Invalid sell date format '{sell_date}'. Use YYYY-MM-DD.", err=True)
+            sys.exit(1)
+        if sell_dt < buy_date:
+            click.echo("Error: Sell date cannot be before buy date.", err=True)
+            sys.exit(1)
+    else:
+        sell_dt = datetime.now()
+
+    # Parse holdings
+    parsed = []
+    for h in holdings:
+        if ':' not in h:
+            click.echo(f"Error: Invalid holding format '{h}'. Use TICKER:AMOUNT.", err=True)
+            sys.exit(1)
+        parts = h.split(':')
+        if len(parts) != 2:
+            click.echo(f"Error: Invalid holding format '{h}'. Use TICKER:AMOUNT.", err=True)
+            sys.exit(1)
+        ticker = parts[0].upper()
+        try:
+            amount = float(parts[1])
+        except ValueError:
+            click.echo(f"Error: Invalid amount in '{h}'.", err=True)
+            sys.exit(1)
+        if amount <= 0:
+            click.echo(f"Error: Amount must be positive in '{h}'.", err=True)
+            sys.exit(1)
+        parsed.append((ticker, amount))
+
+    click.echo(f"Fetching data for {len(parsed)} stocks...")
+
+    results = []
+    for ticker, amount in parsed:
+        try:
+            buy_price, company_name = get_stock_price(ticker, buy_date)
+            if sell_date:
+                sell_price, _ = get_stock_price(ticker, sell_dt)
+            else:
+                sell_price = get_current_price(ticker)
+
+            result = simulate_investment(
+                ticker=ticker,
+                company_name=company_name,
+                buy_date=buy_date,
+                buy_price=buy_price,
+                sell_date=sell_dt,
+                sell_price=sell_price,
+                investment_amount=amount,
+            )
+            results.append(result)
+        except StockDataError as e:
+            click.echo(f"Error fetching {ticker}: {e}", err=True)
+            sys.exit(1)
+
+    portfolio_result = simulate_portfolio(results, buy_date, sell_dt)
+    click.echo("\n" + str(portfolio_result))
 
 
 if __name__ == '__main__':
