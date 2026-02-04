@@ -254,3 +254,41 @@ class ComparisonResult:
 def compare_scenarios(scenarios: list[ScenarioResult]) -> list[ScenarioResult]:
     """Sort scenarios by percent return, highest first."""
     return sorted(scenarios, key=lambda s: s.percent_return, reverse=True)
+
+
+@dataclass
+class BenchmarkResult:
+    """Comparison of an investment against S&P 500 (SPY)."""
+    investment: InvestmentResult
+    benchmark: InvestmentResult
+
+    def __str__(self) -> str:
+        inv = self.investment
+        bench = self.benchmark
+
+        lines = [
+            f"Stock: {inv.ticker} ({inv.company_name})",
+            f"Period: {inv.buy_date.strftime('%Y-%m-%d')} to {inv.sell_date.strftime('%Y-%m-%d')}",
+            f"Investment: ${inv.investment_amount:,.2f}",
+            "",
+            "=" * 50,
+            f"{'':15} {'Your Stock':>15} {'S&P 500':>15}",
+            "-" * 50,
+        ]
+
+        inv_sign = "+" if inv.percent_return >= 0 else ""
+        bench_sign = "+" if bench.percent_return >= 0 else ""
+        lines.append(f"{'Return':15} {inv_sign}{inv.percent_return:>14.1f}% {bench_sign}{bench.percent_return:>14.1f}%")
+        lines.append(f"{'Final Value':15} ${inv.final_value:>13,.0f} ${bench.final_value:>13,.0f}")
+
+        lines.append("=" * 50)
+
+        diff = inv.percent_return - bench.percent_return
+        if diff > 0:
+            lines.append(f"Result: You BEAT the market by +{diff:.1f}%")
+        elif diff < 0:
+            lines.append(f"Result: You UNDERPERFORMED the market by {diff:.1f}%")
+        else:
+            lines.append("Result: You matched the market exactly")
+
+        return "\n".join(lines)

@@ -7,7 +7,7 @@ import click
 from .fetcher import get_stock_price, get_current_price, StockDataError
 from .simulator import (
     simulate_investment, simulate_portfolio, rank_investments,
-    RankingResult, ScenarioResult, ComparisonResult
+    RankingResult, ScenarioResult, ComparisonResult, BenchmarkResult
 )
 from .visualizer import plot_stock_performance, plot_portfolio_comparison
 
@@ -24,11 +24,13 @@ def cli():
 @click.option('--date', '-d', required=True, help='Buy date (YYYY-MM-DD)')
 @click.option('--amount', '-a', required=True, type=float, help='Investment amount in dollars')
 @click.option('--sell-date', '-s', default=None, help='Sell date (YYYY-MM-DD). Defaults to today.')
-def simulate(ticker: str, date: str, amount: float, sell_date: str):
+@click.option('--benchmark', '-b', is_flag=True, help='Compare against S&P 500 (SPY)')
+def simulate(ticker: str, date: str, amount: float, sell_date: str, benchmark: bool):
     """
     Simulate a stock investment.
 
     Example: stock-sim simulate AAPL --date 2020-01-01 --amount 1000
+    Example with benchmark: stock-sim simulate AAPL --date 2020-01-01 --amount 1000 --benchmark
     """
     ticker = ticker.upper()
 
@@ -89,9 +91,36 @@ def simulate(ticker: str, date: str, amount: float, sell_date: str):
         investment_amount=amount,
     )
 
-    click.echo("\n" + "=" * 45)
-    click.echo(str(result))
-    click.echo("=" * 45)
+    if benchmark:
+        # Fetch SPY data for comparison
+        try:
+            spy_buy_price, spy_name = get_stock_price('SPY', buy_date)
+            if sell_date:
+                spy_sell_price, _ = get_stock_price('SPY', sell_dt)
+            else:
+                spy_sell_price = get_current_price('SPY')
+
+            spy_result = simulate_investment(
+                ticker='SPY',
+                company_name=spy_name,
+                buy_date=buy_date,
+                buy_price=spy_buy_price,
+                sell_date=sell_dt,
+                sell_price=spy_sell_price,
+                investment_amount=amount,
+            )
+
+            benchmark_result = BenchmarkResult(investment=result, benchmark=spy_result)
+            click.echo("\n" + str(benchmark_result))
+        except StockDataError as e:
+            click.echo(f"Warning: Could not fetch benchmark data: {e}", err=True)
+            click.echo("\n" + "=" * 45)
+            click.echo(str(result))
+            click.echo("=" * 45)
+    else:
+        click.echo("\n" + "=" * 45)
+        click.echo(str(result))
+        click.echo("=" * 45)
 
 
 @cli.command()
