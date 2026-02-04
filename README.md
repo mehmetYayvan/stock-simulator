@@ -66,15 +66,6 @@ python -m src.cli simulate BTC-USD --date 2020-01-01 --amount 1000
 
 Python 3.10+ | yfinance | click | pandas | matplotlib
 
-## Future Enhancements
-
-- [x] Portfolio mode
-- [x] Best investment finder
-- [x] Compare scenarios
-- [x] Visualization with charts
-- [x] Compare against S&P 500 benchmark
-- [x] Dollar-cost averaging simulation
-
 ## License
 
 MIT
