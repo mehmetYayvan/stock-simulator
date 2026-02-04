@@ -171,3 +171,38 @@ def simulate_portfolio(
         percent_return=percent_return,
         annualized_return=annualized_return,
     )
+
+
+@dataclass
+class RankingResult:
+    """Ranked list of investments by performance."""
+    rankings: list[InvestmentResult] = field(default_factory=list)
+    buy_date: datetime = None
+    sell_date: datetime = None
+    amount: float = 0.0
+
+    def __str__(self) -> str:
+        lines = [
+            "BEST INVESTMENTS",
+            f"Period: {self.buy_date.strftime('%Y-%m-%d')} to {self.sell_date.strftime('%Y-%m-%d')}",
+            f"Investment: ${self.amount:,.0f} each",
+            "=" * 50,
+            f"{'Rank':<5} {'Ticker':<8} {'Return':>12} {'Final Value':>14}",
+            "-" * 50,
+        ]
+
+        for i, r in enumerate(self.rankings, 1):
+            sign = "+" if r.percent_return >= 0 else ""
+            lines.append(f"{i:<5} {r.ticker:<8} {sign}{r.percent_return:>10.1f}%  ${r.final_value:>12,.0f}")
+
+        lines.append("=" * 50)
+        if self.rankings:
+            best = self.rankings[0]
+            lines.append(f"Best: {best.ticker} ({best.company_name})")
+
+        return "\n".join(lines)
+
+
+def rank_investments(results: list[InvestmentResult]) -> list[InvestmentResult]:
+    """Sort investments by percent return, highest first."""
+    return sorted(results, key=lambda r: r.percent_return, reverse=True)
