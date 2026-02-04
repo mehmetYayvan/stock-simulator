@@ -9,6 +9,7 @@ from .simulator import (
     simulate_investment, simulate_portfolio, rank_investments,
     RankingResult, ScenarioResult, ComparisonResult
 )
+from .visualizer import plot_stock_performance, plot_portfolio_comparison
 
 
 @click.group()
@@ -382,6 +383,49 @@ def compare(scenarios: tuple, date: str, sell_date: str):
         sell_date=sell_dt,
     )
     click.echo("\n" + str(comparison))
+
+
+@cli.command()
+@click.argument('tickers', nargs=-1, required=True)
+@click.option('--date', '-d', required=True, help='Start date (YYYY-MM-DD)')
+@click.option('--end-date', '-e', default=None, help='End date (YYYY-MM-DD). Defaults to today.')
+@click.option('--amount', '-a', default=1000.0, type=float, help='Investment amount (default: 1000)')
+@click.option('--save', '-o', default=None, help='Save chart to file (e.g., chart.png)')
+def chart(tickers: tuple, date: str, end_date: str, amount: float, save: str):
+    """
+    Visualize stock performance over time.
+
+    Example: stock-sim chart AAPL TSLA MSFT --date 2020-01-01
+    """
+    try:
+        start_dt = datetime.strptime(date, '%Y-%m-%d')
+    except ValueError:
+        click.echo(f"Error: Invalid date format '{date}'. Use YYYY-MM-DD.", err=True)
+        sys.exit(1)
+
+    if start_dt > datetime.now():
+        click.echo("Error: Start date cannot be in the future.", err=True)
+        sys.exit(1)
+
+    if end_date:
+        try:
+            end_dt = datetime.strptime(end_date, '%Y-%m-%d')
+        except ValueError:
+            click.echo(f"Error: Invalid end date format '{end_date}'. Use YYYY-MM-DD.", err=True)
+            sys.exit(1)
+    else:
+        end_dt = datetime.now()
+
+    tickers = [t.upper() for t in tickers]
+    click.echo(f"Generating chart for {len(tickers)} stocks...")
+
+    plot_stock_performance(
+        tickers=tickers,
+        start_date=start_dt,
+        end_date=end_dt,
+        initial_amount=amount,
+        save_path=save,
+    )
 
 
 if __name__ == '__main__':

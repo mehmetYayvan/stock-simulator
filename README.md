@@ -8,6 +8,7 @@ A Python CLI tool that simulates historical stock investments. Ever wondered "Wh
 - Portfolio mode - track multiple assets
 - Best investment finder - rank by performance
 - Compare scenarios - what if A vs B?
+- Visualization - chart performance over time
 - Calculate returns, profit/loss, annualized performance
 
 ## Installation
@@ -37,6 +38,10 @@ python -m src.cli compare "AAPL:1000,TSLA:500" "MSFT:800,GOOGL:700" --date 2020-
 # Current price
 python -m src.cli price TSLA
 
+# Chart performance (opens window or saves to file)
+python -m src.cli chart AAPL TSLA MSFT --date 2020-01-01
+python -m src.cli chart AAPL TSLA --date 2020-01-01 --save chart.png
+
 # Currencies & crypto (use =X suffix)
 python -m src.cli simulate EURUSD=X --date 2020-01-01 --amount 1000
 python -m src.cli simulate BTC-USD --date 2020-01-01 --amount 1000
@@ -51,14 +56,14 @@ python -m src.cli simulate BTC-USD --date 2020-01-01 --amount 1000
 
 ## Tech Stack
 
-Python 3.10+ | yfinance | click | pandas
+Python 3.10+ | yfinance | click | pandas | matplotlib
 
 ## Future Enhancements
 
 - [x] Portfolio mode
 - [x] Best investment finder
 - [x] Compare scenarios
-- [ ] Visualization with charts
+- [x] Visualization with charts
 - [ ] Compare against S&P 500 benchmark
 - [ ] Dollar-cost averaging simulation
 
