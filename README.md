@@ -15,7 +15,7 @@ A Python CLI tool that simulates historical stock investments. Ever wondered "Wh
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/stock-simulator.git
+git clone https://github.com/mehmetYayvan/stock-simulator.git
 cd stock-simulator
 
 # Create virtual environment (recommended)
