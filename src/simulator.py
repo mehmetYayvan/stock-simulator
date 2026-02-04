@@ -292,3 +292,43 @@ class BenchmarkResult:
             lines.append("Result: You matched the market exactly")
 
         return "\n".join(lines)
+
+
+@dataclass
+class DCAResult:
+    """Results of a dollar-cost averaging simulation."""
+    ticker: str
+    company_name: str
+    start_date: datetime
+    end_date: datetime
+    amount_per_period: float
+    num_purchases: int
+    total_invested: float
+    total_shares: float
+    final_value: float
+    profit: float
+    percent_return: float
+    avg_cost_per_share: float
+    current_price: float
+
+    def __str__(self) -> str:
+        lines = [
+            "DOLLAR-COST AVERAGING SIMULATION",
+            "=" * 50,
+            f"Stock: {self.ticker} ({self.company_name})",
+            f"Period: {self.start_date.strftime('%Y-%m-%d')} to {self.end_date.strftime('%Y-%m-%d')}",
+            f"Investment: ${self.amount_per_period:,.0f}/month x {self.num_purchases} months",
+            "",
+            f"Total Invested: ${self.total_invested:,.2f}",
+            f"Total Shares: {self.total_shares:,.4f}",
+            f"Avg Cost/Share: ${self.avg_cost_per_share:,.2f}",
+            f"Current Price: ${self.current_price:,.2f}",
+            "",
+            f"Final Value: ${self.final_value:,.2f}",
+        ]
+
+        sign = "+" if self.profit >= 0 else ""
+        lines.append(f"Return: {sign}${self.profit:,.2f} ({sign}{self.percent_return:.1f}%)")
+        lines.append("=" * 50)
+
+        return "\n".join(lines)

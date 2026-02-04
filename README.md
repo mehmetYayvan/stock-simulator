@@ -9,6 +9,7 @@ A Python CLI tool that simulates historical stock investments. Ever wondered "Wh
 - Best investment finder - rank by performance
 - Compare scenarios - what if A vs B?
 - Benchmark against S&P 500 - did you beat the market?
+- Dollar-cost averaging simulation
 - Visualization - chart performance over time
 - Calculate returns, profit/loss, annualized performance
 
@@ -29,6 +30,9 @@ python -m src.cli simulate AAPL --date 2020-01-01 --amount 1000
 
 # Compare against S&P 500
 python -m src.cli simulate AAPL --date 2020-01-01 --amount 1000 --benchmark
+
+# Dollar-cost averaging (monthly investments)
+python -m src.cli dca AAPL --date 2020-01-01 --amount 500
 
 # Portfolio (multiple stocks)
 python -m src.cli portfolio AAPL:1000 TSLA:500 MSFT:500 --date 2023-01-01
@@ -69,7 +73,7 @@ Python 3.10+ | yfinance | click | pandas | matplotlib
 - [x] Compare scenarios
 - [x] Visualization with charts
 - [x] Compare against S&P 500 benchmark
-- [ ] Dollar-cost averaging simulation
+- [x] Dollar-cost averaging simulation
 
 ## License
 

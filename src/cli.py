@@ -2,12 +2,13 @@
 
 import sys
 from datetime import datetime
+from dateutil.relativedelta import relativedelta
 import click
 
 from .fetcher import get_stock_price, get_current_price, StockDataError
 from .simulator import (
     simulate_investment, simulate_portfolio, rank_investments,
-    RankingResult, ScenarioResult, ComparisonResult, BenchmarkResult
+    RankingResult, ScenarioResult, ComparisonResult, BenchmarkResult, DCAResult
 )
 from .visualizer import plot_stock_performance, plot_portfolio_comparison
 
@@ -455,6 +456,104 @@ def chart(tickers: tuple, date: str, end_date: str, amount: float, save: str):
         initial_amount=amount,
         save_path=save,
     )
+
+
+@cli.command()
+@click.argument('ticker')
+@click.option('--date', '-d', required=True, help='Start date (YYYY-MM-DD)')
+@click.option('--end-date', '-e', default=None, help='End date (YYYY-MM-DD). Defaults to today.')
+@click.option('--amount', '-a', default=500.0, type=float, help='Amount per month (default: 500)')
+def dca(ticker: str, date: str, end_date: str, amount: float):
+    """
+    Simulate dollar-cost averaging (monthly investments).
+
+    Example: stock-sim dca AAPL --date 2020-01-01 --amount 500
+    """
+    ticker = ticker.upper()
+
+    try:
+        start_dt = datetime.strptime(date, '%Y-%m-%d')
+    except ValueError:
+        click.echo(f"Error: Invalid date format '{date}'. Use YYYY-MM-DD.", err=True)
+        sys.exit(1)
+
+    if start_dt > datetime.now():
+        click.echo("Error: Start date cannot be in the future.", err=True)
+        sys.exit(1)
+
+    if end_date:
+        try:
+            end_dt = datetime.strptime(end_date, '%Y-%m-%d')
+        except ValueError:
+            click.echo(f"Error: Invalid end date format '{end_date}'. Use YYYY-MM-DD.", err=True)
+            sys.exit(1)
+    else:
+        end_dt = datetime.now()
+
+    if amount <= 0:
+        click.echo("Error: Amount must be positive.", err=True)
+        sys.exit(1)
+
+    click.echo(f"Simulating DCA for {ticker}...")
+
+    # Get company name
+    try:
+        _, company_name = get_stock_price(ticker, start_dt)
+    except StockDataError as e:
+        click.echo(f"Error: {e}", err=True)
+        sys.exit(1)
+
+    # Calculate purchases for each month
+    total_shares = 0.0
+    total_invested = 0.0
+    num_purchases = 0
+    current_date = start_dt
+
+    while current_date <= end_dt:
+        try:
+            price, _ = get_stock_price(ticker, current_date)
+            shares = amount / price
+            total_shares += shares
+            total_invested += amount
+            num_purchases += 1
+        except StockDataError:
+            pass  # Skip months with no data
+
+        current_date = current_date + relativedelta(months=1)
+
+    if num_purchases == 0:
+        click.echo("Error: No valid purchase dates found.", err=True)
+        sys.exit(1)
+
+    # Get current price for final value
+    try:
+        current_price = get_current_price(ticker)
+    except StockDataError as e:
+        click.echo(f"Error getting current price: {e}", err=True)
+        sys.exit(1)
+
+    final_value = total_shares * current_price
+    profit = final_value - total_invested
+    percent_return = (profit / total_invested) * 100 if total_invested > 0 else 0
+    avg_cost = total_invested / total_shares if total_shares > 0 else 0
+
+    result = DCAResult(
+        ticker=ticker,
+        company_name=company_name,
+        start_date=start_dt,
+        end_date=end_dt,
+        amount_per_period=amount,
+        num_purchases=num_purchases,
+        total_invested=total_invested,
+        total_shares=total_shares,
+        final_value=final_value,
+        profit=profit,
+        percent_return=percent_return,
+        avg_cost_per_share=avg_cost,
+        current_price=current_price,
+    )
+
+    click.echo("\n" + str(result))
 
 
 if __name__ == '__main__':
